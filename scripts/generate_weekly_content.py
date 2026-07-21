@@ -554,11 +554,15 @@ def fallback_generate(partner: dict[str, Any]) -> str:
         post_date = timeline["week_start"] + dt.timedelta(days=i - 1)
         parts.append(f"- Day {i}（{fmt_date(post_date)}）：{value}")
     parts.append("")
+    parts.append("## 快速进入每日文案")
+    parts.append("")
+    for day in range(1, count + 1):
+        post_date = timeline["week_start"] + dt.timedelta(days=day - 1)
+        parts.append(f"- [Day {day}｜{fmt_date(post_date)}](#day-{day})")
+    parts.append("")
     parts.append("## 每天完整文案")
     parts.append("")
     for day, value in enumerate(values, start=1):
-        post_date = timeline["week_start"] + dt.timedelta(days=day - 1)
-        parts.append(f"---\n\n# {fmt_date(post_date)}｜{weekday_zh(post_date)}｜{publish_status(post_date, timeline['today'])}")
         parts.append(fallback_post(partner, day, value))
     parts.append("\n---\n\n## 下周自动更新说明")
     parts.append(f"到 {fmt_date(timeline['week_start'] + dt.timedelta(days=7))}，系统会自动进入 Week {week_no + 1}，同一个 Dashboard 链接会更新成下一周内容。")
@@ -594,27 +598,81 @@ def try_ai_generate(partner: dict[str, Any]) -> str | None:
     return response.choices[0].message.content
 
 
-def markdown_to_html(markdown: str, title: str) -> str:
+def partner_hero_html(partner: dict[str, Any] | None) -> str:
+    if not partner:
+        return ""
+    name = html.escape(str(partner.get("name") or "IP Partner"))
+    role = html.escape(str(partner.get("ip_role") or "IP 角色"))
+    audience = html.escape(str(partner.get("audience") or "目标受众"))
+    relationship = html.escape(str(partner.get("relationship") or "角色关系"))
+    avatar_url = str(partner.get("avatar_url") or "").strip()
+    initial = html.escape((str(partner.get("name") or "IP").strip() or "IP")[0])
+    if avatar_url:
+        avatar = f'<img src="{html.escape(avatar_url)}" alt="{name} avatar">'
+    else:
+        avatar = f'<span>{initial}</span>'
+    return f"""
+<section class="hero-card">
+  <div class="avatar">{avatar}</div>
+  <div class="hero-main">
+    <div class="eyebrow">IP 起号自动化 Dashboard</div>
+    <h1>{name}</h1>
+    <div class="hero-pills">
+      <span class="pill">角色：{role}</span>
+      <span class="pill">受众：{audience}</span>
+    </div>
+    <p class="hero-relation">{relationship}</p>
+  </div>
+</section>
+"""
+
+
+def markdown_to_html(markdown: str, title: str, partner: dict[str, Any] | None = None) -> str:
     """Small self-contained renderer for the dashboard pages.
 
     Keeps the repo dependency-light while making GitHub Pages serve real HTML.
     """
     css = """
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.65; max-width: 1120px; margin: 0 auto; padding: 28px 18px 80px; color: #1f2937; background: #fbfbfb; }
-    h1, h2, h3, h4 { color: #111827; line-height: 1.25; }
-    h1 { font-size: 2rem; border-bottom: 3px solid #f59e0b; padding-bottom: 12px; }
-    h2 { margin-top: 34px; border-left: 5px solid #f59e0b; padding-left: 10px; }
+    :root { --orange:#f59e0b; --orange2:#fb923c; --ink:#111827; --muted:#6b7280; --card:#ffffff; --soft:#fff7ed; --line:#e5e7eb; }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.65; max-width: 1180px; margin: 0 auto; padding: 28px 18px 80px; color: #1f2937; background: radial-gradient(circle at top left, #ffedd5 0, transparent 34%), linear-gradient(180deg, #fffaf3 0%, #f9fafb 42%, #ffffff 100%); }
+    .hero-card { display:flex; gap:22px; align-items:center; padding:26px; border-radius:28px; background:linear-gradient(135deg,#111827 0%,#7c2d12 55%,#f59e0b 120%); color:#fff; box-shadow:0 22px 60px rgba(124,45,18,.25); margin-bottom:28px; position:relative; overflow:hidden; }
+    .hero-card:after { content:""; position:absolute; right:-60px; top:-60px; width:190px; height:190px; background:rgba(255,255,255,.13); border-radius:999px; }
+    .avatar { width:104px; height:104px; border-radius:28px; background:rgba(255,255,255,.18); display:flex; align-items:center; justify-content:center; flex:0 0 auto; border:2px solid rgba(255,255,255,.28); overflow:hidden; font-size:3rem; font-weight:800; }
+    .avatar img { width:100%; height:100%; object-fit:cover; }
+    .hero-main { position:relative; z-index:1; }
+    .eyebrow { color:#fed7aa; font-size:.9rem; letter-spacing:.08em; text-transform:uppercase; font-weight:700; }
+    .hero-card h1 { color:#fff; border:0; padding:0; margin:.2rem 0 .6rem; font-size:2.2rem; }
+    .hero-pills { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
+    .pill { background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.25); padding:6px 12px; border-radius:999px; font-size:.95rem; }
+    .hero-relation { margin:.5rem 0 0; color:#ffedd5; }
+    body > h1 { display:none; }
+    h1, h2, h3, h4 { color: var(--ink); line-height: 1.25; }
+    h2 { margin-top: 34px; border-left: 6px solid var(--orange); padding: 12px 14px; background: rgba(255,247,237,.72); border-radius: 0 16px 16px 0; }
+    h2[id^="day-"] { background:linear-gradient(90deg,#ffedd5,#fff); border-radius:18px; border-left:0; box-shadow:0 10px 30px rgba(245,158,11,.10); }
     h3 { margin-top: 24px; }
-    table { border-collapse: collapse; width: 100%; background: white; margin: 14px 0 22px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
-    th, td { border: 1px solid #e5e7eb; padding: 10px 12px; vertical-align: top; }
-    th { background: #fff7ed; text-align: center; }
-    tr:nth-child(even) td { background: #fff; }
+    p, li { font-size:1.02rem; }
+    table { border-collapse: collapse; width: 100%; background: white; margin: 14px 0 22px; box-shadow: 0 12px 34px rgba(15,23,42,.08); border-radius:18px; overflow:hidden; }
+    th, td { border: 1px solid var(--line); padding: 12px 14px; vertical-align: top; }
+    th { background: #fff7ed; text-align: center; color:#7c2d12; }
+    tr:nth-child(even) td { background: #fffaf5; }
     code, pre { background: #f3f4f6; border-radius: 6px; }
     pre { padding: 14px; overflow-x: auto; }
     blockquote { border-left: 4px solid #ddd; margin-left: 0; padding-left: 14px; color: #555; }
-    hr { border: 0; border-top: 1px solid #e5e7eb; margin: 32px 0; }
+    hr { border: 0; border-top: 1px solid #e5e7eb; margin: 34px 0; }
     a { color: #2563eb; }
-    .meta { color: #6b7280; font-size: .95rem; }
+    a[href^="#day-"] { display:inline-block; text-decoration:none; color:#7c2d12; background:#fff7ed; border:1px solid #fed7aa; padding:10px 15px; border-radius:999px; font-weight:800; box-shadow:0 8px 20px rgba(245,158,11,.12); transition:.15s ease; }
+    a[href^="#day-"]:hover { transform:translateY(-1px); background:#ffedd5; }
+    details.day-card { background:#fff; border:1px solid #fed7aa; border-radius:20px; margin:18px 0; box-shadow:0 12px 30px rgba(15,23,42,.06); overflow:hidden; }
+    details.day-card summary { cursor:pointer; padding:16px 18px; font-weight:900; color:#7c2d12; background:linear-gradient(90deg,#ffedd5,#fff7ed); list-style:none; }
+    details.day-card summary::-webkit-details-marker { display:none; }
+    details.day-card summary:after { content:"打开 / 收起"; float:right; font-size:.82rem; color:#9a3412; background:#fff; padding:3px 9px; border-radius:999px; border:1px solid #fed7aa; }
+    .day-body { padding:4px 18px 22px; }
+    li:has(a[href^="#day-"]) { display:inline-block; margin:6px 6px 6px 0; }
+    ul:has(a[href^="#day-"]) { padding-left:0; }
+    .meta { color: var(--muted); font-size: .95rem; }
+    @media (max-width: 680px) { .hero-card { align-items:flex-start; padding:20px; gap:14px; } .avatar { width:76px; height:76px; border-radius:22px; font-size:2.1rem; } .hero-card h1 { font-size:1.5rem; } table { font-size:.9rem; } th,td { padding:9px; } }
     """
 
     def inline(text: str) -> str:
@@ -622,7 +680,8 @@ def markdown_to_html(markdown: str, title: str) -> str:
         import re
         safe = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", safe)
         safe = re.sub(r"`(.+?)`", r"<code>\1</code>", safe)
-        url_re = re.compile(r"(https?://[^\s<]+)")
+        safe = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', safe)
+        url_re = re.compile(r"(?<!href=\")(https?://[^\s<]+)")
         safe = url_re.sub(r'<a href="\1">\1</a>', safe)
         return safe
 
@@ -662,7 +721,11 @@ def markdown_to_html(markdown: str, title: str) -> str:
         elif stripped.startswith("### "):
             out.append(f"<h3>{inline(stripped[4:])}</h3>")
         elif stripped.startswith("## "):
-            out.append(f"<h2>{inline(stripped[3:])}</h2>")
+            heading_text = stripped[3:]
+            import re
+            m = re.match(r"Day\s+(\d+)", heading_text)
+            heading_id = f' id="day-{m.group(1)}"' if m else ""
+            out.append(f"<h2{heading_id}>{inline(heading_text)}</h2>")
         elif stripped.startswith("# "):
             out.append(f"<h1>{inline(stripped[2:])}</h1>")
         elif stripped.startswith("- "):
@@ -679,6 +742,50 @@ def markdown_to_html(markdown: str, title: str) -> str:
     if in_table:
         out.append("</tbody></table>")
 
+    day_script = """
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const headings = Array.from(document.querySelectorAll('h2[id^="day-"]'));
+  headings.forEach((heading, index) => {
+    const details = document.createElement('details');
+    details.className = 'day-card';
+    details.id = heading.id;
+    if (index === 0) details.open = true;
+
+    const summary = document.createElement('summary');
+    summary.textContent = heading.textContent;
+    const body = document.createElement('div');
+    body.className = 'day-body';
+
+    let node = heading.nextSibling;
+    heading.replaceWith(details);
+    details.appendChild(summary);
+    details.appendChild(body);
+
+    while (node) {
+      const next = node.nextSibling;
+      if (node.nodeType === 1 && node.matches && node.matches('h2[id^="day-"], h2')) {
+        const text = node.textContent || '';
+        if (node.matches('h2[id^="day-"]') || text.includes('下周自动更新说明')) break;
+      }
+      body.appendChild(node);
+      node = next;
+    }
+  });
+
+  document.querySelectorAll('a[href^="#day-"]').forEach(link => {
+    link.addEventListener('click', event => {
+      event.preventDefault();
+      const target = document.querySelector(link.getAttribute('href'));
+      if (!target) return;
+      document.querySelectorAll('details.day-card').forEach(card => card.open = false);
+      target.open = true;
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+});
+</script>
+"""
     return f"""<!doctype html>
 <html lang=\"zh-Hans\">
 <head>
@@ -688,7 +795,9 @@ def markdown_to_html(markdown: str, title: str) -> str:
 <style>{css}</style>
 </head>
 <body>
+{partner_hero_html(partner)}
 {chr(10).join(out)}
+{day_script}
 </body>
 </html>
 """
@@ -704,7 +813,7 @@ def write_partner_page(partner: dict[str, Any], content: str) -> Path:
     out_path = out_dir / "index.md"
     out_path.write_text(content, encoding="utf-8")
     html_path = out_dir / "index.html"
-    html_path.write_text(markdown_to_html(content, f"{partner.get('name')}｜IP 起号 Dashboard"), encoding="utf-8")
+    html_path.write_text(markdown_to_html(content, f"{partner.get('name')}｜IP 起号 Dashboard", partner), encoding="utf-8")
     return out_path
 
 
