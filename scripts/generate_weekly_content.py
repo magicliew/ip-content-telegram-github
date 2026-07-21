@@ -335,6 +335,51 @@ def fallback_post(partner: dict[str, Any], day: int, value: str) -> str:
 """
 
 
+def platform_analysis_block(partner: dict[str, Any]) -> str:
+    links = partner.get("platform_links", {}) or {}
+    platforms = partner.get("platforms", []) or []
+    direct_elder = partner.get("audience_perspective") == "direct_elder_parent"
+    viewer_note = "主要打中阿公阿嬷和父母本人，让他们听了觉得被理解，而不是只写给孩子/孙子女看。" if direct_elder else "主要打中目标受众的共鸣，让他们看到自己和身边人的关系。"
+
+    def link_line(key: str, label: str) -> str:
+        value = links.get(key)
+        if not value:
+            return f"- **{label}：** 暂无链接 / 资料"
+        return f"- **{label}：** {value}"
+
+    return "\n".join([
+        "## 平台账号分析",
+        "",
+        "### 已收集的平台资料",
+        link_line("facebook", "Facebook"),
+        link_line("instagram", "Instagram"),
+        link_line("tiktok", "TikTok"),
+        link_line("wechat", "WeChat / 微信"),
+        link_line("xiaohongshu", "小红书"),
+        "",
+        "### 初步账号判断",
+        f"- **核心人设：** {partner.get('ip_role', '')}，用晚辈视角讲长辈 / 父母关系。",
+        f"- **主要受众：** {partner.get('audience', '')}。{viewer_note}",
+        f"- **角色关系：** {partner.get('relationship', '')}。这个关系适合用真实生活细节、反话、嘴硬心软、陪伴感来起号。",
+        f"- **语气方向：** {partner.get('tone', '')}",
+        "",
+        "### 各平台文案方向",
+        "- **Facebook：** 适合情绪完整一点的 caption，重点放在家庭共鸣、父母心声、长辈真实想法，适合引导留言分享家庭故事。",
+        "- **Instagram：** 适合短一点、更有共鸣金句感的 caption，Hook 要清楚，留言点要轻。",
+        "- **TikTok：** 适合强 Hook、直接刺中情绪，开头第一句话要像观众心里的话。",
+        "- **WeChat / 微信：** 适合稍微完整、有温度、有价值观总结的文字，让父母 / 长辈读起来不被冒犯。",
+        "- **小红书：** 适合真实分享口吻，标题要像生活观察，不要太官方。",
+        "",
+        "### 过去内容文案架构观察",
+        "目前系统已收集平台链接，但还没有接 dashboard / API 自动读取每支影片表现，所以这一版先不乱编播放量、点赞、留言数据。",
+        "正式分析时会比较：过去表现较好内容的开头 Hook、口播结构、caption 语气、留言点、平台差异，再决定下周方向。",
+        "",
+        "### 本周先测试方向",
+        "先测试「被长辈 / 父母本人听懂的共鸣型文案」：不是叫年轻人理解长辈，而是让阿公阿嬷、爸爸妈妈自己觉得：这篇是在讲我。",
+        "",
+    ])
+
+
 def fallback_generate(partner: dict[str, Any]) -> str:
     count = max(1, min(int(partner.get("posts_per_week", 7)), 14))
     week = this_week_label()
@@ -355,6 +400,8 @@ def fallback_generate(partner: dict[str, Any]) -> str:
         f"**角色关系：** {partner.get('relationship', '')}  ",
         f"**主要平台：** {platforms}  ",
         f"**内容语气：** {partner.get('tone', '')}  ",
+        "",
+        platform_analysis_block(partner),
         "",
         "## 本周起号方向",
         "",
@@ -418,18 +465,28 @@ def write_home_index(generated: list[tuple[dict[str, Any], Path]]) -> None:
     DOCS_DIR.mkdir(exist_ok=True)
     now = dt.datetime.now().strftime("%Y-%m-%d %H:%M")
     lines = [
-        "# IP 起号内容周报入口",
+        "# IP 起号内容周报系统",
         "",
         f"最后更新：{now}",
         "",
-        "这里会列出已经建立 IP 档案的伙伴。点进去就可以看本周每天要拍的标题、口播文案、Caption 和 Hashtag。",
+        "每个伙伴都有自己的独立页面。",
         "",
-        "## 伙伴列表",
+        "为了避免不同伙伴的 IP 分析、平台资料和文案混在一起，这个首页不会公开列出所有伙伴链接。",
         "",
+        "伙伴请使用系统发送给你的专属链接查看自己的周报。",
+        "",
+        "示例链接格式：",
+        "",
+        "```text",
+        "https://magicliew.github.io/ip-content-telegram-github/partners/你的伙伴ID/",
+        "```",
+        "",
+        "## 目前系统状态",
+        "",
+        f"- 已建立独立伙伴页面数量：{len(generated)}",
+        "- 每个伙伴页面独立生成，不会混合其他伙伴内容",
+        "- 每个伙伴页面包含自己的平台分析、起号方向、每日 Hook、口播、Caption、Hashtag",
     ]
-    for partner, _path in generated:
-        slug = partner_slug(partner)
-        lines.append(f"- [{partner.get('name', slug)}](partners/{slug}/) — {partner.get('ip_role', '')} / {partner.get('audience', '')}")
     (DOCS_DIR / "index.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 

@@ -2,7 +2,7 @@
 
 这是 Magic 的 **IP 起号内容周报系统** MVP。
 
-伙伴在 Telegram bot 完成 IP 资料设定后，系统会每周自动生成一份网页周报，里面包含每天要拍的：
+伙伴在 Telegram bot 完成 IP 资料和平台资料设定后，系统会先建立「平台账号分析」，再每周自动生成一份独立网页周报。每个伙伴都有自己的页面，不会混在一起。
 
 - 标题 / Hook
 - 口播文案
@@ -19,18 +19,22 @@ https://magicliew.github.io/ip-content-telegram-github/
 ## 系统流程
 
 ```text
-Telegram bot 收集伙伴 IP 资料
+Telegram bot 收集伙伴 IP 资料 + 平台资料
 ↓
 保存成 partners/<telegram_user_id>.yaml
 ↓
+系统先做该伙伴自己的平台账号分析
+↓
 GitHub Actions 每周一自动运行
 ↓
-scripts/generate_weekly_content.py 生成内容
+scripts/generate_weekly_content.py 为每个伙伴独立生成内容
 ↓
 输出到 docs/partners/<telegram_user_id>/index.md
 ↓
-GitHub Pages 发布网页
+GitHub Pages 发布该伙伴自己的独立网页
 ```
+
+注意：每个伙伴页面是分开的，不会把 Magic 的内容、伙伴 A 的内容、伙伴 B 的内容混在同一个页面。首页也不会公开列出所有伙伴链接，伙伴只看自己的专属链接。
 
 ---
 
