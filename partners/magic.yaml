@@ -2,10 +2,10 @@ name: Magic｜孙女 erer
 telegram_user_id: magic
 start_date: "2026-07-21"
 ip_role: 孙女
-audience: 阿公阿嬷和父母
-relationship: 孙女对阿公阿嬷，以及女儿对父母
+audience: 阿公阿嬷
+relationship: 像朋友一样和长辈聊天；让阿公阿嬷觉得我是一个懂事、陪伴他们、讲的东西都是他们认可的孙女
 audience_perspective: direct_elder_parent
-primary_viewer: 阿公阿嬷和父母本人
+primary_viewer: 阿公阿嬷本人
 platforms:
   - Facebook
   - Instagram
@@ -13,27 +13,30 @@ platforms:
   - WeChat / 微信视频号
   - 小红书
 platform_links:
-  facebook: "https://www.facebook.com/profile.php?id=61587844599112&sk=reels_tab"
+  facebook: "https://www.facebook.com/profile.php?id=61587844599112"
   instagram: "https://www.instagram.com/granddaughter.erer/"
   tiktok: "https://www.tiktok.com/@granddaughtererer"
   wechat: "微信视频号：孙女 erer（QR code）"
   xiaohongshu: "https://www.xiaohongshu.com/user/profile/69a541af0000000026039321"
-tone: 温柔、有共鸣、像真实孙女讲话，带一点马来西亚华人家庭生活感，不要太像 AI，不要太官方，不要太广告
+tone: 像朋友一样聊天；亲切、有陪伴感、懂事但不说教，像真实孙女直接跟阿公阿嬷讲话，不要太像 AI，不要太官方
 content_directions:
-  - 亲情
-  - 阿公阿嬷日常
-  - 父母与女儿关系
+  - 像朋友一样和长辈聊天
+  - 陪伴阿公阿嬷
+  - 阿公阿嬷认可的价值观
+  - 阿公阿嬷日常生活观察
   - 长辈嘴硬心软
-  - 长大后才懂
-  - 陪伴感
-  - 代际差异
-  - 家庭人情味
-  - 马来西亚华人家庭生活观察
+  - 长辈人情味
+  - 节俭不是小气
+  - 快乐很简单
+  - 不想麻烦别人
 avoid:
+  - 不要每天重复同一种价值观
+  - 不要像年轻人在教育长辈
+  - 不要把长辈当成需要被解释的对象
   - 不要太像广告
   - 不要太官方
   - 不要太作文
-  - 不要每天重复同一种价值观
+  - 不要太 AI
   - 不要给拍摄建议
   - 不要给镜头建议
   - 不要给封面建议

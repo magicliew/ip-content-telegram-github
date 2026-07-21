@@ -140,6 +140,85 @@ TOPIC_BANK = {
     },
 }
 
+DIRECT_ELDER_HOOKS = {
+    "嘴硬心软": [
+        "阿公阿嬷，你嘴上说不用，其实心里是开心的吧？",
+        "你每次骂孩子乱花钱，东西却收得很好",
+        "阿嬷说不要买，其实收到的时候会偷偷开心",
+        "阿公阿嬷最常讲不用，但心里最容易感动",
+        "嘴上念两句，心里暖很久，说的是不是你？",
+        "你不是不喜欢孩子买给你，是怕孩子花钱",
+        "有些开心，阿公阿嬷真的不太会讲出口",
+        "阿嬷骂你乱花钱，可是东西收得比谁都好",
+    ],
+    "不想麻烦别人": [
+        "阿公阿嬷，你说不用，不一定是真的不用吧？",
+        "你不是没有需要，是不想麻烦孩子",
+        "越懂事的长辈，越常把需要藏起来",
+        "你每次讲自己可以，其实是不想别人担心",
+        "有一种客气，是怕自己变成孩子的负担",
+        "明明想要人陪，却先叫孩子去忙",
+        "阿公阿嬷，你们是不是最常讲：我不用啦",
+        "你说没关系的时候，心里真的没关系吗？",
+    ],
+    "长大后才懂": [
+        "阿公阿嬷，以前你讲的话，我现在慢慢懂了",
+        "小时候听不懂，长大后才知道你们是为我好",
+        "以前觉得你啰嗦，现在才知道你是在担心",
+        "阿嬷以前讲的老话，现在越来越有道理",
+        "有些老人家的话，要长大一点才听得懂",
+        "以前嫌你烦，现在最想听你再讲一次",
+        "阿公阿嬷讲的不是老派，是人生经验",
+        "原来你们以前不是管太多，是怕我们吃亏",
+    ],
+    "节俭不是小气": [
+        "阿公阿嬷，你们不是小气，是以前真的苦过",
+        "你什么都舍不得丢，其实不是因为小气",
+        "阿嬷那句还能用，我现在才懂",
+        "阿公阿嬷省了一辈子，最后都花在家里人身上",
+        "你不是不喜欢好的东西，是习惯先想别人",
+        "老人家的节俭，藏着以前不容易的日子",
+        "你舍不得浪费，是因为你知道东西来得不容易",
+        "阿嬷不是舍不得花钱，是舍不得乱花钱",
+    ],
+    "陪伴感": [
+        "阿公阿嬷，其实你要的不是礼物，是我们坐下来陪一下吧？",
+        "一餐饭而已，你可能已经期待了一整天",
+        "你嘴上叫孩子忙自己的，心里其实想他多坐一下",
+        "陪你看一下电视，可能就是你今天最开心的事",
+        "阿公阿嬷最开心的，不一定是收到东西",
+        "有时候我们人在，你们就很开心了",
+        "你一直讲不用陪，其实很想有人听你聊天吧？",
+        "阿嬷重复讲的故事，其实是在找人陪",
+    ],
+    "不说爱但一直做": [
+        "阿公阿嬷不会说爱，可是一直在做给我们看",
+        "你不会讲想我，只会问我吃饱了吗",
+        "阿嬷的爱不是我爱你，是锅里留着的饭",
+        "阿公不说担心，但会一直叫你路上小心",
+        "你们那一代人，爱都藏在动作里",
+        "不说爱的人，其实常常做最多",
+        "阿公阿嬷不会讲甜话，但会把好的留给你",
+        "有一种爱，没有抱抱，只有多夹一块肉",
+    ],
+    "代际差异": [
+        "阿公阿嬷，我们不是不爱听，是有时候真的听不懂你们的担心",
+        "你们讲经验，我们讲感受，所以才常常误会",
+        "有些吵架不是不爱，是两代人表达不一样",
+        "我们嫌你啰嗦，你怕我们吃亏",
+        "阿公阿嬷的关心，听起来有时候像责备",
+        "不是你们老派，是我们还没听懂你们的爱",
+        "代沟最难的地方，是大家明明都在关心",
+        "你用你的方式疼我们，我们用我们的方式学着懂你",
+    ],
+}
+
+
+def hooks_for_partner(partner: dict[str, Any], value: str) -> list[str]:
+    if partner.get("audience_perspective") == "direct_elder_parent":
+        return DIRECT_ELDER_HOOKS.get(value, TOPIC_BANK.get(value, TOPIC_BANK["长大后才懂"])["hooks"])
+    return TOPIC_BANK.get(value, TOPIC_BANK["长大后才懂"])["hooks"]
+
 
 def this_week_label() -> str:
     today = dt.date.today()
@@ -321,18 +400,7 @@ def caption_block(hook: str, partner: dict[str, Any], value: str) -> str:
 
 def fallback_post(partner: dict[str, Any], day: int, value: str) -> str:
     data = TOPIC_BANK.get(value) or TOPIC_BANK["长大后才懂"]
-    hooks = data["hooks"]
-    if partner.get("audience_perspective") == "direct_elder_parent":
-        hooks = [
-            "你嘴上说不用，其实心里是开心的吧？",
-            "很多父母不是不想要，是怕麻烦孩子",
-            "你每次骂孩子乱花钱，东西却收得很好",
-            "阿公阿嬷最常讲不用，但心里最容易感动",
-            "你不是不需要关心，只是不习惯开口",
-            "你说不要买，孩子其实都看得出来你开心",
-            "父母的嘴硬，很多时候是怕孩子辛苦",
-            "有些开心，爸爸妈妈真的不太会讲出口",
-        ]
+    hooks = hooks_for_partner(partner, value)
     detail = data["detail"]
     emotion = data["emotion"]
     role = partner.get("ip_role", "这个角色")
@@ -475,18 +543,7 @@ def dashboard_calendar_block(partner: dict[str, Any], values: list[str], timelin
     ]
     for idx, value in enumerate(values, start=1):
         post_date = week_start + dt.timedelta(days=idx - 1)
-        hooks = TOPIC_BANK.get(value, TOPIC_BANK["长大后才懂"])["hooks"]
-        if partner.get("audience_perspective") == "direct_elder_parent":
-            hooks = [
-                "你嘴上说不用，其实心里是开心的吧？",
-                "很多父母不是不想要，是怕麻烦孩子",
-                "你每次骂孩子乱花钱，东西却收得很好",
-                "阿公阿嬷最常讲不用，但心里最容易感动",
-                "你不是不需要关心，只是不习惯开口",
-                "你说不要买，孩子其实都看得出来你开心",
-                "父母的嘴硬，很多时候是怕孩子辛苦",
-                "有些开心，爸爸妈妈真的不太会讲出口",
-            ]
+        hooks = hooks_for_partner(partner, value)
         lines.append(
             f"| {fmt_date(post_date)} | {weekday_zh(post_date)} | {idx} | {value} | {hooks[(idx - 1) % len(hooks)]} | {publish_status(post_date, today)} |"
         )
