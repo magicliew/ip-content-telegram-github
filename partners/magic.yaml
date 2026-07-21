@@ -1,0 +1,39 @@
+name: Magic｜孙女 erer
+telegram_user_id: magic
+ip_role: 孙女
+audience: 阿公阿嬷和父母
+relationship: 孙女对阿公阿嬷，以及女儿对父母
+platforms:
+  - Facebook
+  - Instagram
+  - TikTok
+  - WeChat / 微信视频号
+  - 小红书
+platform_links:
+  facebook: "https://www.facebook.com/profile.php?id=61587844599112&sk=reels_tab"
+  instagram: "https://www.instagram.com/granddaughter.erer/"
+  tiktok: "https://www.tiktok.com/@granddaughtererer"
+  wechat: "微信视频号：孙女 erer（QR code）"
+  xiaohongshu: "https://www.xiaohongshu.com/user/profile/69a541af0000000026039321"
+tone: 温柔、有共鸣、像真实孙女讲话，带一点马来西亚华人家庭生活感，不要太像 AI，不要太官方，不要太广告
+content_directions:
+  - 亲情
+  - 阿公阿嬷日常
+  - 父母与女儿关系
+  - 长辈嘴硬心软
+  - 长大后才懂
+  - 陪伴感
+  - 代际差异
+  - 家庭人情味
+  - 马来西亚华人家庭生活观察
+avoid:
+  - 不要太像广告
+  - 不要太官方
+  - 不要太作文
+  - 不要每天重复同一种价值观
+  - 不要给拍摄建议
+  - 不要给镜头建议
+  - 不要给封面建议
+  - 不要乱编平台数据
+posts_per_week: 7
+language: 华文
