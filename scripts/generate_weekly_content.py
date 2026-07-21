@@ -240,18 +240,30 @@ def parse_date(value: Any) -> dt.date:
 
 
 def partner_timeline(partner: dict[str, Any], count: int) -> dict[str, Any]:
-    """Compute rolling dashboard week from the first Telegram onboarding date."""
+    """Compute rolling dashboard week from onboarding date or an explicit content start date.
+
+    `content_start_date` lets Magic collect onboarding now but schedule the generated
+    Week 1 content for a future week when this week's videos are already prepared.
+    """
     today = dt.date.today()
-    start_date = parse_date(partner.get("start_date") or partner.get("created_at"))
-    if start_date > today:
-        start_date = today
-    days_since_start = (today - start_date).days
-    current_week = (days_since_start // 7) + 1
-    week_start = start_date + dt.timedelta(days=(current_week - 1) * 7)
+    onboarding_date = parse_date(partner.get("start_date") or partner.get("created_at"))
+    start_date = parse_date(partner.get("content_start_date") or onboarding_date)
+
+    if partner.get("content_start_date"):
+        current_week = 1 if today <= start_date else ((today - start_date).days // 7) + 1
+        week_start = start_date + dt.timedelta(days=(current_week - 1) * 7)
+    else:
+        if start_date > today:
+            start_date = today
+        days_since_start = (today - start_date).days
+        current_week = (days_since_start // 7) + 1
+        week_start = start_date + dt.timedelta(days=(current_week - 1) * 7)
+
     week_end = week_start + dt.timedelta(days=count - 1)
     return {
         "today": today,
-        "start_date": start_date,
+        "start_date": onboarding_date,
+        "content_start_date": start_date,
         "current_week": current_week,
         "week_start": week_start,
         "week_end": week_end,
@@ -579,10 +591,11 @@ def fallback_generate(partner: dict[str, Any]) -> str:
         "## 当前进度",
         "",
         f"- **伙伴开始日期：** {fmt_date(timeline['start_date'])}  ",
+        f"- **内容开始日期：** {fmt_date(timeline['content_start_date'])}  ",
         f"- **当前周数：** Week {week_no}  ",
         f"- **本周日期：** {fmt_date(timeline['week_start'])} - {fmt_date(timeline['week_end'])}  ",
         f"- **今日：** {fmt_date(timeline['today'])}  ",
-        "- **Dashboard 规则：** 伙伴第一次在 Telegram 开始 onboarding 的日期 = Week 1 Day 1；之后每 7 天自动进入下一周。  ",
+        "- **Dashboard 规则：** 若已设定内容开始日期，Week 1 Day 1 会从内容开始日期算起；之后每 7 天自动进入下一周。  ",
         "",
         "## IP 档案",
         "",
