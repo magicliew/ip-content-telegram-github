@@ -11,6 +11,7 @@ Production-ish MVP behavior:
 from __future__ import annotations
 
 import datetime as dt
+import html
 import os
 from pathlib import Path
 from typing import Any
@@ -593,6 +594,106 @@ def try_ai_generate(partner: dict[str, Any]) -> str | None:
     return response.choices[0].message.content
 
 
+def markdown_to_html(markdown: str, title: str) -> str:
+    """Small self-contained renderer for the dashboard pages.
+
+    Keeps the repo dependency-light while making GitHub Pages serve real HTML.
+    """
+    css = """
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.65; max-width: 1120px; margin: 0 auto; padding: 28px 18px 80px; color: #1f2937; background: #fbfbfb; }
+    h1, h2, h3, h4 { color: #111827; line-height: 1.25; }
+    h1 { font-size: 2rem; border-bottom: 3px solid #f59e0b; padding-bottom: 12px; }
+    h2 { margin-top: 34px; border-left: 5px solid #f59e0b; padding-left: 10px; }
+    h3 { margin-top: 24px; }
+    table { border-collapse: collapse; width: 100%; background: white; margin: 14px 0 22px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    th, td { border: 1px solid #e5e7eb; padding: 10px 12px; vertical-align: top; }
+    th { background: #fff7ed; text-align: center; }
+    tr:nth-child(even) td { background: #fff; }
+    code, pre { background: #f3f4f6; border-radius: 6px; }
+    pre { padding: 14px; overflow-x: auto; }
+    blockquote { border-left: 4px solid #ddd; margin-left: 0; padding-left: 14px; color: #555; }
+    hr { border: 0; border-top: 1px solid #e5e7eb; margin: 32px 0; }
+    a { color: #2563eb; }
+    .meta { color: #6b7280; font-size: .95rem; }
+    """
+
+    def inline(text: str) -> str:
+        safe = html.escape(text)
+        import re
+        safe = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", safe)
+        safe = re.sub(r"`(.+?)`", r"<code>\1</code>", safe)
+        url_re = re.compile(r"(https?://[^\s<]+)")
+        safe = url_re.sub(r'<a href="\1">\1</a>', safe)
+        return safe
+
+    out: list[str] = []
+    in_ul = False
+    in_table = False
+    lines = markdown.splitlines()
+    i = 0
+    while i < len(lines):
+        raw = lines[i]
+        line = raw.rstrip()
+        stripped = line.strip()
+
+        if in_table and not (stripped.startswith("|") and stripped.endswith("|")):
+            out.append("</tbody></table>")
+            in_table = False
+        if in_ul and not stripped.startswith("- "):
+            out.append("</ul>")
+            in_ul = False
+
+        if not stripped:
+            i += 1
+            continue
+        if stripped == "---":
+            out.append("<hr>")
+        elif stripped.startswith("|") and stripped.endswith("|"):
+            cells = [c.strip() for c in stripped.strip("|").split("|")]
+            is_sep = all(set(c) <= {"-", ":"} for c in cells)
+            if not in_table and i + 1 < len(lines) and lines[i + 1].strip().startswith("|"):
+                out.append("<table><tbody>")
+                in_table = True
+            if not is_sep:
+                tag = "th" if i + 1 < len(lines) and set("".join([c.strip() for c in lines[i + 1].strip().strip("|").split("|")])) <= {"-", ":"} else "td"
+                out.append("<tr>" + "".join(f"<{tag}>{inline(c)}</{tag}>" for c in cells) + "</tr>")
+        elif stripped.startswith("#### "):
+            out.append(f"<h4>{inline(stripped[5:])}</h4>")
+        elif stripped.startswith("### "):
+            out.append(f"<h3>{inline(stripped[4:])}</h3>")
+        elif stripped.startswith("## "):
+            out.append(f"<h2>{inline(stripped[3:])}</h2>")
+        elif stripped.startswith("# "):
+            out.append(f"<h1>{inline(stripped[2:])}</h1>")
+        elif stripped.startswith("- "):
+            if not in_ul:
+                out.append("<ul>")
+                in_ul = True
+            out.append(f"<li>{inline(stripped[2:])}</li>")
+        else:
+            out.append(f"<p>{inline(stripped)}</p>")
+        i += 1
+
+    if in_ul:
+        out.append("</ul>")
+    if in_table:
+        out.append("</tbody></table>")
+
+    return f"""<!doctype html>
+<html lang=\"zh-Hans\">
+<head>
+<meta charset=\"utf-8\">
+<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+<title>{html.escape(title)}</title>
+<style>{css}</style>
+</head>
+<body>
+{chr(10).join(out)}
+</body>
+</html>
+"""
+
+
 def partner_slug(partner: dict[str, Any]) -> str:
     return str(partner.get("telegram_user_id") or partner.get("name")).replace(" ", "-")
 
@@ -602,6 +703,8 @@ def write_partner_page(partner: dict[str, Any], content: str) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "index.md"
     out_path.write_text(content, encoding="utf-8")
+    html_path = out_dir / "index.html"
+    html_path.write_text(markdown_to_html(content, f"{partner.get('name')}｜IP 起号 Dashboard"), encoding="utf-8")
     return out_path
 
 
@@ -631,7 +734,9 @@ def write_home_index(generated: list[tuple[dict[str, Any], Path]]) -> None:
         "- 每个伙伴页面独立生成，不会混合其他伙伴内容",
         "- 每个伙伴页面包含自己的平台分析、起号方向、每日 Hook、口播、Caption、Hashtag",
     ]
-    (DOCS_DIR / "index.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    content = "\n".join(lines) + "\n"
+    (DOCS_DIR / "index.md").write_text(content, encoding="utf-8")
+    (DOCS_DIR / "index.html").write_text(markdown_to_html(content, "IP 起号 Dashboard 系统"), encoding="utf-8")
 
 
 def main() -> None:
