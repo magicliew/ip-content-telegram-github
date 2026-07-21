@@ -207,6 +207,37 @@ def recommended_hooks_md(hooks: list[str]) -> str:
 def caption_block(hook: str, partner: dict[str, Any], value: str) -> str:
     role = partner.get("ip_role", "这个角色")
     audience = partner.get("audience", "你")
+    if partner.get("audience_perspective") == "direct_elder_parent":
+        return f"""#### 通用版
+{hook}。  
+有时候不是你不想表达，是你习惯先替孩子、孙子女想。  
+如果你也是嘴上常说不用、心里其实很开心的人，这一篇可能会像在讲你。
+
+#### Facebook 微调版
+很多阿公阿嬷、爸爸妈妈都一样。  
+嘴上说不用、不麻烦、不需要，心里其实很在意孩子有没有想到自己。  
+你是不是也是这样？嘴上念，心里暖。
+
+#### Instagram 微调版
+{hook}。  
+有些爱不是不会有感觉，只是不习惯讲出来。  
+你是不是也常常这样？
+
+#### TikTok 微调版
+{hook}。  
+嘴上说不用，心里其实开心。  
+这是不是你，还是你家里的爸爸妈妈 / 阿公阿嬷？
+
+#### WeChat / 微信微调版
+很多父母和长辈不是不需要关心，只是不习惯开口说需要。  
+一句“我不用”，有时候不是拒绝，而是不想孩子麻烦。  
+如果你也常常这样，这一篇写给你。
+
+#### 小红书微调版
+今天这个点真的很像很多阿公阿嬷、爸爸妈妈：{value}。  
+不是没有感觉，只是嘴上习惯说不用；不是不开心，只是不知道怎样表达开心。  
+你是不是也这样？"""
+
     return f"""#### 通用版
 {hook}。  
 有些关系，真的要长大一点才看得懂。  
@@ -241,6 +272,17 @@ def caption_block(hook: str, partner: dict[str, Any], value: str) -> str:
 def fallback_post(partner: dict[str, Any], day: int, value: str) -> str:
     data = TOPIC_BANK.get(value) or TOPIC_BANK["长大后才懂"]
     hooks = data["hooks"]
+    if partner.get("audience_perspective") == "direct_elder_parent":
+        hooks = [
+            hooks[0].replace("的人", "的爸爸妈妈和阿公阿嬷"),
+            "你是不是嘴上说不用，心里其实很开心？",
+            "很多父母不是不想要，是不想麻烦孩子",
+            "你每次说不用，其实孩子都看得出来",
+            "阿公阿嬷和父母的嘴硬，很多时候是心软",
+            "不是你不需要关心，是你习惯先替孩子想",
+            "你说不要浪费钱，其实心里已经暖了",
+            "有些开心，父母和长辈真的不太会讲出口",
+        ]
     detail = data["detail"]
     emotion = data["emotion"]
     role = partner.get("ip_role", "这个角色")
@@ -248,7 +290,22 @@ def fallback_post(partner: dict[str, Any], day: int, value: str) -> str:
     relationship = partner.get("relationship", "角色关系")
     tone = partner.get("tone", "自然、有共鸣")
 
-    script = f"""{hooks[0]}。
+    if partner.get("audience_perspective") == "direct_elder_parent":
+        script = f"""{hooks[0]}。
+
+我做孙女这个角色，常常会发现一件事：很多阿公阿嬷、爸爸妈妈不是没有感觉，只是很少把感觉讲出来。你们那一代人，很多时候习惯先忍一忍，先说不用，先讲不要麻烦孩子。
+
+{detail}
+
+可是站在孙女、女儿的角度看，其实我们都看得出来。你嘴上可能说“不要买啦，很浪费钱”，可是东西会收好；嘴上说“我不用啦”，可是孩子回来坐一下，你会开心很久；嘴上说“你忙你的”，可是电话挂了之后，又会希望他下次再打来。
+
+所以这一篇不是要笑你嘴硬，而是想替很多父母、很多阿公阿嬷把心里的话讲出来。你不是不需要被关心，你只是习惯不要开口；你不是不开心，你只是不好意思表现得太明显。
+
+{emotion} 这种爱很安静，但其实很深。也因为这样，很多孩子和孙子女长大后才慢慢看懂：原来以前那些念、那些省、那些“不用”，背后都是爱。
+
+如果你也是这种嘴上常常说不用、心里其实很暖的爸爸妈妈或阿公阿嬷，留言告诉我：你最常对孩子说哪一句“反话”？"""
+    else:
+        script = f"""{hooks[0]}。
 
 我以前一直觉得，{relationship}之间，很多事情只要讲清楚就好了。可是后来才发现，不是每个人都会很直接地表达自己，尤其是我们家里那些比较传统、比较习惯忍一忍的人。
 
@@ -283,6 +340,13 @@ def fallback_generate(partner: dict[str, Any]) -> str:
     week = this_week_label()
     platforms = "、".join(partner.get("platforms", []))
     values = [VALUE_ROTATION[i % len(VALUE_ROTATION)] for i in range(count)]
+    if partner.get("audience_perspective") == "direct_elder_parent":
+        direction_text = f"本周用「{partner.get('ip_role', 'IP角色')}视角」讲给阿公阿嬷和父母听。重点不是叫孩子理解长辈，而是让长辈/父母自己听了觉得：对，我就是这样，我嘴上说不用，其实心里有感觉。内容会用温柔、不冒犯的方式，把父母和长辈的嘴硬、节俭、不想麻烦孩子、不会表达爱，讲成一种被理解的情绪。"
+        interaction_text = "这套内容适合先测试长辈/父母共鸣型起号，因为它容易让观众留言：『我也是这样』、『我每次都说不用』、『做父母的真的会这样』。"
+    else:
+        direction_text = f"本周先用「{partner.get('relationship', '角色关系')}」里的真实生活细节来建立 IP 记忆点。重点不是硬讲道理，而是把目标受众熟悉、但平时不会特别说出口的情绪讲出来：嘴硬、心软、不想麻烦别人、节俭、陪伴和代际差异。"
+        interaction_text = "这套内容适合先测试共鸣型起号，因为它容易让观众留言：『我家也是这样』、『我阿嬷也是』、『看到想到我家人』。"
+
     parts = [
         f"# {partner.get('name')}｜{week} IP 起号内容周报",
         "",
@@ -294,9 +358,9 @@ def fallback_generate(partner: dict[str, Any]) -> str:
         "",
         "## 本周起号方向",
         "",
-        f"本周先用「{partner.get('relationship', '角色关系')}」里的真实生活细节来建立 IP 记忆点。重点不是硬讲道理，而是把目标受众熟悉、但平时不会特别说出口的情绪讲出来：嘴硬、心软、不想麻烦别人、节俭、陪伴和代际差异。",
+        direction_text,
         "",
-        "这套内容适合先测试共鸣型起号，因为它容易让观众留言：『我家也是这样』、『我阿嬷也是』、『看到想到我家人』。",
+        interaction_text,
         "",
         "## 本周价值观轮换",
         "",

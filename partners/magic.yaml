@@ -3,6 +3,8 @@ telegram_user_id: magic
 ip_role: 孙女
 audience: 阿公阿嬷和父母
 relationship: 孙女对阿公阿嬷，以及女儿对父母
+audience_perspective: direct_elder_parent
+primary_viewer: 阿公阿嬷和父母本人
 platforms:
   - Facebook
   - Instagram
