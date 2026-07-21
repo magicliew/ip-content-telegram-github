@@ -126,11 +126,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     if step + 1 < len(QUESTIONS):
         await update.message.reply_text(QUESTIONS[step + 1][1])
     else:
-        url_hint = f"docs/partners/{user_id}/index.md"
+        site_base_url = os.getenv("SITE_BASE_URL", "https://magicliew.github.io/ip-content-telegram-github").rstrip("/")
+        page_url = f"{site_base_url}/partners/{user_id}/"
         await update.message.reply_text(
             "好了，你的 IP 档案已经建立完成。\n\n"
-            "接下来系统每周会根据这个档案生成：标题、口播文案、Caption 和 Hashtag。\n\n"
-            f"第一版生成后会出现在：{url_hint}"
+            "接下来系统每周会根据这个档案生成：\n"
+            "1. 标题 / Hook\n"
+            "2. 口播文案\n"
+            "3. 视频发布文案 / Caption\n"
+            "4. Hashtag\n\n"
+            "你的内容页面会在每周自动更新：\n"
+            f"{page_url}\n\n"
+            "如果你之后要重新设定 IP，只要再输入：启动 IP 起号文案助手模式"
         )
 
 
