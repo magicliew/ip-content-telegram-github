@@ -11,6 +11,7 @@ Then GitHub Actions can generate the weekly pages.
 """
 from __future__ import annotations
 
+import datetime as dt
 import os
 from pathlib import Path
 from typing import Any
@@ -85,6 +86,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "telegram_user_id": str(user.id),
         "name": user.full_name or user.username or str(user.id),
         "language": "华文",
+        "start_date": dt.date.today().isoformat(),
+        "created_at": dt.datetime.now().isoformat(timespec="seconds"),
     }
     await update.message.reply_text(START_TEXT)
 

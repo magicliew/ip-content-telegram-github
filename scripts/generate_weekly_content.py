@@ -146,6 +146,55 @@ def this_week_label() -> str:
     return f"{year}-W{week:02d}"
 
 
+def parse_date(value: Any) -> dt.date:
+    """Parse partner start_date; fallback to today for old profiles."""
+    if isinstance(value, dt.date):
+        return value
+    text = str(value or "").strip()
+    if text:
+        try:
+            return dt.date.fromisoformat(text[:10])
+        except ValueError:
+            pass
+    return dt.date.today()
+
+
+def partner_timeline(partner: dict[str, Any], count: int) -> dict[str, Any]:
+    """Compute rolling dashboard week from the first Telegram onboarding date."""
+    today = dt.date.today()
+    start_date = parse_date(partner.get("start_date") or partner.get("created_at"))
+    if start_date > today:
+        start_date = today
+    days_since_start = (today - start_date).days
+    current_week = (days_since_start // 7) + 1
+    week_start = start_date + dt.timedelta(days=(current_week - 1) * 7)
+    week_end = week_start + dt.timedelta(days=count - 1)
+    return {
+        "today": today,
+        "start_date": start_date,
+        "current_week": current_week,
+        "week_start": week_start,
+        "week_end": week_end,
+    }
+
+
+def fmt_date(date_value: dt.date) -> str:
+    return f"{date_value.month}月{date_value.day}日"
+
+
+def weekday_zh(date_value: dt.date) -> str:
+    names = ["一", "二", "三", "四", "五", "六", "日"]
+    return f"星期{names[date_value.weekday()]}"
+
+
+def publish_status(post_date: dt.date, today: dt.date) -> str:
+    if post_date < today:
+        return "待复盘"
+    if post_date == today:
+        return "今日发布"
+    return "待发布"
+
+
 def read_partner(path: Path) -> dict[str, Any]:
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     data.setdefault("telegram_user_id", path.stem)
@@ -389,20 +438,95 @@ def platform_analysis_block(partner: dict[str, Any]) -> str:
     ])
 
 
+def account_diagnosis_block(partner: dict[str, Any]) -> str:
+    direct_elder = partner.get("audience_perspective") == "direct_elder_parent"
+    if direct_elder:
+        core_issue = "现在最容易卡住的地方，是内容如果写成『年轻人看长辈』，就会吸引到孩子/孙子女；但你的真正受众是阿公阿嬷和父母本人，所以文案必须让他们觉得：这篇是在讲我。"
+        breakthrough = "Week 先测试『替父母/长辈说出不好意思讲出口的话』，用温柔、不冒犯的方式讲嘴硬、节俭、不想麻烦孩子、不会表达爱。"
+    else:
+        core_issue = "很多账号不起号，不一定是内容不好，而是观众还没有一秒看懂：你是谁、你代表什么、为什么我要持续看你。"
+        breakthrough = "Week 先测试『把目标受众心里的那句话讲出来』，让 Hook 更像内心独白，而不是普通分享开场。"
+
+    return "\n".join([
+        "## 起号诊断",
+        "",
+        "### 为什么账号现在可能还没起号",
+        f"1. **IP 记忆点需要更清楚：** {partner.get('ip_role', '这个角色')} 不能只是一个身份，要变成观众记得住的内容立场。",
+        f"2. **受众要更精准：** 内容要明确讲给「{partner.get('audience', '目标受众')}」，不要让算法和观众都觉得太散。",
+        "3. **Hook 要更像心里话：** 开头不能只是记录生活，要像观众刷到时心里突然被讲中的一句话。",
+        "4. **留言点要更具体：** 不要只问『你觉得呢？』，要问观众很容易回答的真实生活细节。",
+        f"5. **目前关键问题：** {core_issue}",
+        "",
+        "### 本周起号突破口",
+        breakthrough,
+        "",
+    ])
+
+
+def dashboard_calendar_block(partner: dict[str, Any], values: list[str], timeline: dict[str, Any]) -> str:
+    today = timeline["today"]
+    week_start = timeline["week_start"]
+    lines = [
+        "## 本周发布 Dashboard",
+        "",
+        "| 日期 | 星期 | Day | 视频主题 | 主 Hook | 状态 |",
+        "|---|---|---:|---|---|---|",
+    ]
+    for idx, value in enumerate(values, start=1):
+        post_date = week_start + dt.timedelta(days=idx - 1)
+        hooks = TOPIC_BANK.get(value, TOPIC_BANK["长大后才懂"])["hooks"]
+        if partner.get("audience_perspective") == "direct_elder_parent":
+            hooks = [
+                "你嘴上说不用，其实心里是开心的吧？",
+                "很多父母不是不想要，是怕麻烦孩子",
+                "你每次骂孩子乱花钱，东西却收得很好",
+                "阿公阿嬷最常讲不用，但心里最容易感动",
+                "你不是不需要关心，只是不习惯开口",
+                "你说不要买，孩子其实都看得出来你开心",
+                "父母的嘴硬，很多时候是怕孩子辛苦",
+                "有些开心，爸爸妈妈真的不太会讲出口",
+            ]
+        lines.append(
+            f"| {fmt_date(post_date)} | {weekday_zh(post_date)} | {idx} | {value} | {hooks[(idx - 1) % len(hooks)]} | {publish_status(post_date, today)} |"
+        )
+    lines.extend([
+        "",
+        "### 状态说明",
+        "- **今日发布：** 今天优先拍/发这一支。",
+        "- **待发布：** 之后几天的内容，可以先准备。",
+        "- **待复盘：** 日期已过，之后可以把视频链接/表现发回 Telegram 做复盘。",
+        "",
+    ])
+    return "\n".join(lines)
+
+
 def fallback_generate(partner: dict[str, Any]) -> str:
     count = max(1, min(int(partner.get("posts_per_week", 7)), 14))
-    week = this_week_label()
     platforms = "、".join(partner.get("platforms", []))
-    values = [VALUE_ROTATION[i % len(VALUE_ROTATION)] for i in range(count)]
+    timeline = partner_timeline(partner, count)
+    week_no = timeline["current_week"]
+    # Rotate values by partner week so Week 2/3 do not repeat Week 1 exactly.
+    values = [VALUE_ROTATION[(week_no - 1 + i) % len(VALUE_ROTATION)] for i in range(count)]
+
     if partner.get("audience_perspective") == "direct_elder_parent":
-        direction_text = f"本周用「{partner.get('ip_role', 'IP角色')}视角」讲给阿公阿嬷和父母听。重点不是叫孩子理解长辈，而是让长辈/父母自己听了觉得：对，我就是这样，我嘴上说不用，其实心里有感觉。内容会用温柔、不冒犯的方式，把父母和长辈的嘴硬、节俭、不想麻烦孩子、不会表达爱，讲成一种被理解的情绪。"
-        interaction_text = "这套内容适合先测试长辈/父母共鸣型起号，因为它容易让观众留言：『我也是这样』、『我每次都说不用』、『做父母的真的会这样』。"
+        direction_text = f"Week {week_no} 用「{partner.get('ip_role', 'IP角色')}视角」讲给阿公阿嬷和父母本人听。重点不是叫孩子理解长辈，而是让长辈/父母自己听了觉得：对，我就是这样，我嘴上说不用，其实心里有感觉。"
+        interaction_text = "这套内容适合测试长辈/父母共鸣型起号，因为它容易让观众留言：『我也是这样』、『我每次都说不用』、『做父母的真的会这样』。"
     else:
-        direction_text = f"本周先用「{partner.get('relationship', '角色关系')}」里的真实生活细节来建立 IP 记忆点。重点不是硬讲道理，而是把目标受众熟悉、但平时不会特别说出口的情绪讲出来：嘴硬、心软、不想麻烦别人、节俭、陪伴和代际差异。"
-        interaction_text = "这套内容适合先测试共鸣型起号，因为它容易让观众留言：『我家也是这样』、『我阿嬷也是』、『看到想到我家人』。"
+        direction_text = f"Week {week_no} 先用「{partner.get('relationship', '角色关系')}」里的真实生活细节来建立 IP 记忆点。重点不是硬讲道理，而是把目标受众熟悉、但平时不会特别说出口的情绪讲出来。"
+        interaction_text = "这套内容适合测试共鸣型起号，因为它容易让观众留言、分享给同类受众，或 tag 身边的人。"
 
     parts = [
-        f"# {partner.get('name')}｜{week} IP 起号内容周报",
+        f"# {partner.get('name')}｜IP 起号 Dashboard",
+        "",
+        "## 当前进度",
+        "",
+        f"- **伙伴开始日期：** {fmt_date(timeline['start_date'])}  ",
+        f"- **当前周数：** Week {week_no}  ",
+        f"- **本周日期：** {fmt_date(timeline['week_start'])} - {fmt_date(timeline['week_end'])}  ",
+        f"- **今日：** {fmt_date(timeline['today'])}  ",
+        "- **Dashboard 规则：** 伙伴第一次在 Telegram 开始 onboarding 的日期 = Week 1 Day 1；之后每 7 天自动进入下一周。  ",
+        "",
+        "## IP 档案",
         "",
         f"**IP 角色：** {partner.get('ip_role', '')}  ",
         f"**目标受众：** {partner.get('audience', '')}  ",
@@ -412,20 +536,31 @@ def fallback_generate(partner: dict[str, Any]) -> str:
         "",
         platform_analysis_block(partner),
         "",
+        account_diagnosis_block(partner),
+        "",
         "## 本周起号方向",
         "",
         direction_text,
         "",
         interaction_text,
         "",
+        dashboard_calendar_block(partner, values, timeline),
+        "",
         "## 本周价值观轮换",
         "",
     ]
     for i, value in enumerate(values, start=1):
-        parts.append(f"- Day {i}：{value}")
+        post_date = timeline["week_start"] + dt.timedelta(days=i - 1)
+        parts.append(f"- Day {i}（{fmt_date(post_date)}）：{value}")
+    parts.append("")
+    parts.append("## 每天完整文案")
     parts.append("")
     for day, value in enumerate(values, start=1):
+        post_date = timeline["week_start"] + dt.timedelta(days=day - 1)
+        parts.append(f"---\n\n# {fmt_date(post_date)}｜{weekday_zh(post_date)}｜{publish_status(post_date, timeline['today'])}")
         parts.append(fallback_post(partner, day, value))
+    parts.append("\n---\n\n## 下周自动更新说明")
+    parts.append(f"到 {fmt_date(timeline['week_start'] + dt.timedelta(days=7))}，系统会自动进入 Week {week_no + 1}，同一个 Dashboard 链接会更新成下一周内容。")
     return "\n".join(parts)
 
 
