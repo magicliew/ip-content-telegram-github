@@ -709,8 +709,8 @@ def partner_hero_html(partner: dict[str, Any] | None) -> str:
       <p class="hero-relation">{relationship}</p>
       <div class="platform-row" aria-label="connected platforms">{platforms}</div>
       <div class="hero-actions">
-        <a class="primary-cta" href="#content-dashboard">查看文案</a>
-        <a class="secondary-cta" href="#account-notes-panel">账号分析</a>
+        <a class="primary-cta" href="content/">查看文案</a>
+        <a class="secondary-cta" href="analysis/">账号分析</a>
       </div>
     </div>
   </div>
@@ -939,13 +939,68 @@ def partner_slug(partner: dict[str, Any]) -> str:
     return str(partner.get("telegram_user_id") or partner.get("name")).replace(" ", "-")
 
 
+def split_dashboard_content(content: str) -> tuple[str, str]:
+    marker = "\n## 本周发布 Dashboard"
+    if marker not in content:
+        return content, content
+    analysis_md, content_md = content.split(marker, 1)
+    return analysis_md.strip() + "\n", "## 本周发布 Dashboard" + content_md
+
+
 def write_partner_page(partner: dict[str, Any], content: str) -> Path:
     out_dir = DOCS_DIR / "partners" / partner_slug(partner)
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    analysis_md, content_md = split_dashboard_content(content)
+    partner_name = partner.get("name")
+
+    # Page 1: landing page only. No long scrolling report here.
+    landing_md = "\n".join([
+        f"# {partner_name}｜IP 起号 Dashboard",
+        "",
+        "这个页面是你的 IP 起号入口。按 **查看文案** 进入本周 Day 1–Day 7 内容；按 **账号分析** 查看诊断资料。",
+        "",
+    ])
     out_path = out_dir / "index.md"
-    out_path.write_text(content, encoding="utf-8")
-    html_path = out_dir / "index.html"
-    html_path.write_text(markdown_to_html(content, f"{partner.get('name')}｜IP 起号 Dashboard", partner), encoding="utf-8")
+    out_path.write_text(landing_md, encoding="utf-8")
+    (out_dir / "index.html").write_text(
+        markdown_to_html(landing_md, f"{partner_name}｜IP 起号 Dashboard", partner),
+        encoding="utf-8",
+    )
+
+    # Page 2: content dashboard + Day 1–7 copy.
+    content_dir = out_dir / "content"
+    content_dir.mkdir(exist_ok=True)
+    content_page = "\n".join([
+        f"# {partner_name}｜本周文案",
+        "",
+        "[← 回 Dashboard 首页](../) · [查看账号分析](../analysis/)",
+        "",
+        content_md.strip(),
+        "",
+    ])
+    (content_dir / "index.md").write_text(content_page, encoding="utf-8")
+    (content_dir / "index.html").write_text(
+        markdown_to_html(content_page, f"{partner_name}｜本周文案"),
+        encoding="utf-8",
+    )
+
+    # Page 3: account analysis / IP profile.
+    analysis_dir = out_dir / "analysis"
+    analysis_dir.mkdir(exist_ok=True)
+    analysis_page = "\n".join([
+        f"# {partner_name}｜账号分析",
+        "",
+        "[← 回 Dashboard 首页](../) · [查看本周文案](../content/)",
+        "",
+        analysis_md.strip(),
+        "",
+    ])
+    (analysis_dir / "index.md").write_text(analysis_page, encoding="utf-8")
+    (analysis_dir / "index.html").write_text(
+        markdown_to_html(analysis_page, f"{partner_name}｜账号分析"),
+        encoding="utf-8",
+    )
     return out_path
 
 
