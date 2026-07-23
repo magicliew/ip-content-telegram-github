@@ -5,52 +5,66 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>IP 起号 Dashboard 系统</title>
 <style>
-    :root { --orange:#f59e0b; --orange2:#fb923c; --ink:#111827; --muted:#6b7280; --card:#ffffff; --soft:#fff7ed; --line:#e5e7eb; }
+    :root { --mint:#63e6be; --mint2:#9ff5dc; --mint-dark:#0f766e; --ink:#0b0f14; --charcoal:#111827; --gray:#6b7280; --soft:#eefcf7; --line:#d9eee7; --card:#ffffff; }
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.65; max-width: 1180px; margin: 0 auto; padding: 28px 18px 80px; color: #1f2937; background: radial-gradient(circle at top left, #ffedd5 0, transparent 34%), linear-gradient(180deg, #fffaf3 0%, #f9fafb 42%, #ffffff 100%); }
-    .hero-card { display:flex; gap:22px; align-items:center; padding:26px; border-radius:28px; background:linear-gradient(135deg,#111827 0%,#7c2d12 55%,#f59e0b 120%); color:#fff; box-shadow:0 22px 60px rgba(124,45,18,.25); margin-bottom:28px; position:relative; overflow:hidden; }
-    .hero-card:after { content:""; position:absolute; right:-60px; top:-60px; width:190px; height:190px; background:rgba(255,255,255,.13); border-radius:999px; }
-    .avatar { width:104px; height:104px; border-radius:28px; background:rgba(255,255,255,.18); display:flex; align-items:center; justify-content:center; flex:0 0 auto; border:2px solid rgba(255,255,255,.28); overflow:hidden; font-size:3rem; font-weight:800; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.65; max-width: 1180px; margin: 0 auto; padding: 24px 16px 80px; color: #1f2937; background: radial-gradient(circle at top left, rgba(99,230,190,.28) 0, transparent 34%), linear-gradient(180deg, #f8fffc 0%, #f4f7f6 46%, #ffffff 100%); }
+    .hero-card { min-height: 86vh; display:flex; flex-direction:column; justify-content:center; padding:38px; border-radius:34px; background:linear-gradient(135deg,#070a0f 0%,#111827 48%,#1f2937 100%); color:#fff; box-shadow:0 28px 80px rgba(6,78,59,.22); margin-bottom:30px; position:relative; overflow:hidden; border:1px solid rgba(99,230,190,.18); }
+    .hero-glow { position:absolute; inset:auto -120px -120px auto; width:360px; height:360px; background:radial-gradient(circle, rgba(99,230,190,.42), transparent 68%); border-radius:999px; filter:blur(4px); }
+    .hero-card:before { content:""; position:absolute; inset:0; background:linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px), linear-gradient(180deg, rgba(255,255,255,.045) 1px, transparent 1px); background-size:42px 42px; mask-image:linear-gradient(180deg,#000,transparent 76%); }
+    .hero-topline { position:relative; z-index:1; color:var(--mint2); font-size:.86rem; letter-spacing:.12em; text-transform:uppercase; font-weight:800; margin-bottom:18px; }
+    .hero-content { position:relative; z-index:1; display:flex; align-items:center; gap:28px; }
+    .avatar { width:128px; height:128px; border-radius:36px; background:linear-gradient(135deg, rgba(99,230,190,.28), rgba(255,255,255,.08)); display:flex; align-items:center; justify-content:center; flex:0 0 auto; border:1px solid rgba(159,245,220,.38); overflow:hidden; font-size:3.5rem; font-weight:900; box-shadow:0 18px 44px rgba(0,0,0,.28); }
     .avatar img { width:100%; height:100%; object-fit:cover; }
-    .hero-main { position:relative; z-index:1; }
-    .eyebrow { color:#fed7aa; font-size:.9rem; letter-spacing:.08em; text-transform:uppercase; font-weight:700; }
-    .hero-card h1 { color:#fff; border:0; padding:0; margin:.2rem 0 .6rem; font-size:2.2rem; }
-    .hero-pills { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
-    .pill { background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.25); padding:6px 12px; border-radius:999px; font-size:.95rem; }
-    .hero-relation { margin:.5rem 0 0; color:#ffedd5; }
+    .hero-main h1 { color:#fff; border:0; padding:0; margin:.15rem 0 .2rem; font-size:clamp(2.1rem,5vw,4.4rem); letter-spacing:-.06em; line-height:1; }
+    .hero-role { display:inline-block; margin:.35rem 0 .7rem; color:#06251e; background:var(--mint); font-weight:900; padding:7px 14px; border-radius:999px; }
+    .hero-audience { color:#d1fae5; font-size:1.08rem; margin:.2rem 0; }
+    .hero-relation { color:#a7f3d0; margin:.25rem 0 1rem; max-width:780px; }
+    .platform-row { display:flex; flex-wrap:wrap; gap:9px; margin:16px 0 22px; }
+    .platform-logo { min-width:40px; height:40px; padding:0 12px; border-radius:14px; display:inline-flex; align-items:center; justify-content:center; background:rgba(255,255,255,.08); border:1px solid rgba(159,245,220,.26); color:#ecfdf5; font-weight:900; box-shadow:inset 0 1px 0 rgba(255,255,255,.08); }
+    .platform-facebook { color:#93c5fd; } .platform-instagram { color:#f9a8d4; } .platform-tiktok { color:#67e8f9; } .platform-wechat { color:#86efac; } .platform-xiaohongshu { color:#fecaca; font-size:.78rem; } .muted-logo { color:#9ca3af; }
+    .hero-actions { display:flex; flex-wrap:wrap; gap:12px; }
+    .primary-cta, .secondary-cta { display:inline-flex; align-items:center; justify-content:center; text-decoration:none; border-radius:999px; font-weight:950; padding:13px 22px; transition:.16s ease; }
+    .primary-cta { background:var(--mint); color:#052e2b; box-shadow:0 18px 45px rgba(99,230,190,.26); }
+    .primary-cta:after { content:" →"; margin-left:4px; }
+    .secondary-cta { color:#d1fae5; background:rgba(255,255,255,.06); border:1px solid rgba(159,245,220,.22); }
+    .primary-cta:hover, .secondary-cta:hover { transform:translateY(-2px); }
     body > h1 { display:none; }
     h1, h2, h3, h4 { color: var(--ink); line-height: 1.25; }
-    h2 { margin-top: 34px; border-left: 6px solid var(--orange); padding: 12px 14px; background: rgba(255,247,237,.72); border-radius: 0 16px 16px 0; }
-    h2[id^="day-"] { background:linear-gradient(90deg,#ffedd5,#fff); border-radius:18px; border-left:0; box-shadow:0 10px 30px rgba(245,158,11,.10); }
+    h2 { margin-top: 34px; border-left: 6px solid var(--mint); padding: 12px 14px; background: rgba(238,252,247,.82); border-radius: 0 16px 16px 0; }
+    h2[id^="day-"] { background:linear-gradient(90deg,#d9fff2,#fff); border-radius:18px; border-left:0; box-shadow:0 10px 30px rgba(15,118,110,.10); }
     h3 { margin-top: 24px; }
     p, li { font-size:1.02rem; }
     table { border-collapse: collapse; width: 100%; background: white; margin: 14px 0 22px; box-shadow: 0 12px 34px rgba(15,23,42,.08); border-radius:18px; overflow:hidden; }
     th, td { border: 1px solid var(--line); padding: 12px 14px; vertical-align: top; }
-    th { background: #fff7ed; text-align: center; color:#7c2d12; }
-    tr:nth-child(even) td { background: #fffaf5; }
+    th { background: #eafff7; text-align: center; color:#075e54; }
+    tr:nth-child(even) td { background: #f8fffc; }
     code, pre { background: #f3f4f6; border-radius: 6px; }
     pre { padding: 14px; overflow-x: auto; }
     blockquote { border-left: 4px solid #ddd; margin-left: 0; padding-left: 14px; color: #555; }
     hr { border: 0; border-top: 1px solid #e5e7eb; margin: 34px 0; }
-    a { color: #2563eb; }
-    a[href^="#day-"] { display:inline-block; text-decoration:none; color:#7c2d12; background:#fff7ed; border:1px solid #fed7aa; padding:10px 15px; border-radius:999px; font-weight:800; box-shadow:0 8px 20px rgba(245,158,11,.12); transition:.15s ease; }
-    a[href^="#day-"]:hover { transform:translateY(-1px); background:#ffedd5; }
-    details.day-card { background:#fff; border:1px solid #fed7aa; border-radius:20px; margin:18px 0; box-shadow:0 12px 30px rgba(15,23,42,.06); overflow:hidden; }
-    details.day-card summary { cursor:pointer; padding:16px 18px; font-weight:900; color:#7c2d12; background:linear-gradient(90deg,#ffedd5,#fff7ed); list-style:none; }
+    a { color: #0f766e; }
+    #content-dashboard { scroll-margin-top:18px; }
+    a[href^="#day-"] { display:inline-flex; align-items:center; text-decoration:none; color:#064e3b; background:#eafff7; border:1px solid #b6f4de; padding:11px 16px; border-radius:999px; font-weight:900; box-shadow:0 8px 20px rgba(15,118,110,.10); transition:.15s ease; }
+    a[href^="#day-"]:hover { transform:translateY(-1px); background:#d9fff2; }
+    details.day-card { background:#fff; border:1px solid #b6f4de; border-radius:22px; margin:18px 0; box-shadow:0 12px 30px rgba(15,23,42,.06); overflow:hidden; }
+    details.day-card summary { cursor:pointer; padding:17px 20px; font-weight:950; color:#064e3b; background:linear-gradient(90deg,#d9fff2,#f8fffc); list-style:none; }
     details.day-card summary::-webkit-details-marker { display:none; }
-    details.day-card summary:after { content:"打开 / 收起"; float:right; font-size:.82rem; color:#9a3412; background:#fff; padding:3px 9px; border-radius:999px; border:1px solid #fed7aa; }
+    details.day-card summary:after { content:"打开 / 收起"; float:right; font-size:.82rem; color:#075e54; background:#fff; padding:3px 9px; border-radius:999px; border:1px solid #b6f4de; }
     .day-body { padding:4px 18px 22px; }
     li:has(a[href^="#day-"]) { display:inline-block; margin:6px 6px 6px 0; }
     ul:has(a[href^="#day-"]) { padding-left:0; }
-    .meta { color: var(--muted); font-size: .95rem; }
-    @media (max-width: 680px) { .hero-card { align-items:flex-start; padding:20px; gap:14px; } .avatar { width:76px; height:76px; border-radius:22px; font-size:2.1rem; } .hero-card h1 { font-size:1.5rem; } table { font-size:.9rem; } th,td { padding:9px; } }
+    details.account-notes { background:rgba(255,255,255,.72); border:1px solid var(--line); border-radius:20px; margin:18px 0 28px; box-shadow:0 10px 28px rgba(15,23,42,.05); overflow:hidden; }
+    details.account-notes summary { cursor:pointer; font-weight:950; color:#111827; padding:16px 18px; background:#f8fffc; }
+    .account-notes-body { padding:0 18px 18px; }
+    .meta { color: var(--gray); font-size: .95rem; }
+    @media (max-width: 760px) { body { padding:14px 10px 70px; } .hero-card { min-height:76vh; padding:24px; border-radius:28px; } .hero-content { align-items:flex-start; gap:16px; } .avatar { width:84px; height:84px; border-radius:24px; font-size:2.3rem; } .platform-logo { height:36px; min-width:36px; border-radius:12px; } table { font-size:.88rem; display:block; overflow-x:auto; } th,td { padding:9px; } }
     </style>
 </head>
 <body>
 
 <h1>IP 起号内容周报系统</h1>
-<p>最后更新：2026-07-21 13:16</p>
+<p>最后更新：2026-07-23 13:28</p>
 <p>每个伙伴都有自己的独立页面。</p>
 <p>为了避免不同伙伴的 IP 分析、平台资料和文案混在一起，这个首页不会公开列出所有伙伴链接。</p>
 <p>伙伴请使用系统发送给你的专属链接查看自己的周报。</p>
@@ -67,12 +81,33 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+  const accountStart = document.querySelector('#account-notes');
+  const contentStart = document.querySelector('#content-dashboard');
+  if (accountStart && contentStart) {
+    const details = document.createElement('details');
+    details.className = 'account-notes';
+    details.id = 'account-notes-panel';
+    const summary = document.createElement('summary');
+    summary.textContent = '查看账号分析 / IP 档案';
+    const body = document.createElement('div');
+    body.className = 'account-notes-body';
+    accountStart.parentNode.insertBefore(details, accountStart);
+    details.appendChild(summary);
+    details.appendChild(body);
+    let node = accountStart;
+    while (node && node !== contentStart) {
+      const next = node.nextSibling;
+      body.appendChild(node);
+      node = next;
+    }
+  }
+
   const headings = Array.from(document.querySelectorAll('h2[id^="day-"]'));
   headings.forEach((heading, index) => {
     const details = document.createElement('details');
     details.className = 'day-card';
     details.id = heading.id;
-    if (index === 0) details.open = true;
+    if (window.location.hash === `#${details.id}`) details.open = true;
 
     const summary = document.createElement('summary');
     summary.textContent = heading.textContent;
